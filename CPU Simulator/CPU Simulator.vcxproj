@@ -23,11 +23,13 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="Cpu.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="SafeQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cpu.h" />
+    <ClInclude Include="SafeQueue.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
