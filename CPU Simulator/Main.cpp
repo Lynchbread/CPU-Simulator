@@ -26,15 +26,15 @@ int main()
 	//func_ptrs.emplace_back(&Cpu::ProcessData);
 
 	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames);
-		auto process_data_ptr = &Cpu::ProcessData;
-		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
+		//Cpu cpu(l1_cache_size, associativity, data_filenames);
+		//auto process_data_ptr = &Cpu::ProcessData;
+		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
 
 	{
-		//Cpu cpu(l1_cache_size, associativity, data_filenames, 4, 4);
-		//auto process_data_ptr = &Cpu::ProcessDataParallel2;
-		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
+		Cpu cpu(l1_cache_size, associativity, data_filenames, 4, 4);
+		auto process_data_ptr = &Cpu::ProcessData2;
+		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
 
 	return 0;
@@ -53,12 +53,12 @@ std::vector<std::string> generate_lists(const unsigned long long data_entries, c
 		if (i < data_entries / data_entries_per_file)
 		{
 			data_filenames.push_back(filename);
-			generate_number_list(filename, data_entries_per_file, 0, max);
+			//generate_number_list(filename, data_entries_per_file, 0, max);
 		}
 		else if (data_entries % data_entries_per_file != 0)
 		{
 			data_filenames.push_back(filename);
-			generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
+			//generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
 		}
 	}
 

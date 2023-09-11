@@ -15,9 +15,16 @@ Cache::Cache(const unsigned long cache_size, const unsigned long associativity, 
 		compulsory_vector_.assign(ULONG_MAX, false);
 }
 
+Cache::Cache(const Cache& other)
+	: ways_(other.ways_), sets_(other.sets_), full_(other.full_), cache_(other.cache_),
+	compulsory_vector_(other.compulsory_vector_)
+{
+
+}
+
 Cache::~Cache()
 {
-	delete[] cache_;
+	//delete[] cache_;
 }
 
 // Not thread safe
@@ -94,3 +101,10 @@ void Cache::insert_data(const unsigned long data, const unsigned long way)
 	if (cache_[set].size() > ways_)
 		cache_[set].erase(cache_[set].begin());
 }
+/*
+Cache Cache::operator=(const Cache& other) const
+	: ways_(other.ways_), sets_(other.sets_), full_(other.full_), cache_(other.cache_),
+	  compulsory_vector_(other.compulsory_vector_)
+{
+
+}*/

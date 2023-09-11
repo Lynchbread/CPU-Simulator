@@ -16,20 +16,27 @@ class Cpu
 	int num_data_threads_;
 	int num_core_threads_;
 
+	//std::vector<SafeQueue<unsigned long>> safe_queue_vector_;
+
 	Cache l3_cache_;
 
-	std::vector <Core> cores_;
+	//std::vector <Core> cores_;
+	Core** cores_;
 	std::vector<std::string> filename_vector_;
 	static void read_in_data(std::string, std::vector<unsigned long>*);
 	static void read_in_data2(std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*, bool*);
 
+
 public:
 	Cpu();
 	Cpu(unsigned long, unsigned long, std::vector<std::string>&, int = 1, int = 1);
+	~Cpu();
 
 	void ProcessData();
 	void ProcessDataParallel();
 	void ProcessDataParallel2();
+
+	void ProcessData2();
 
 	//static void generate_threads(int, std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*);
 };

@@ -12,10 +12,14 @@ public:
 
 protected:
 	std::queue<T, Container> queue_;
-	std::mutex mutex_;
+	std::mutex* queue_mutex_;
+	std::mutex* bool_mutex_;
+	bool done_ = false;
 
 public:
-	SafeQueue() = default;
+	SafeQueue();
+	SafeQueue(const SafeQueue&);
+	~SafeQueue();
 
 	reference& back();
 	reference& deque();
@@ -25,14 +29,39 @@ public:
 	void push(const value_type&);
 	void push(value_type&&);
 	size_type size();
+
+	void set_done(bool);
+	bool is_done();
 };
+
+template <class T, class Container>
+SafeQueue<T, Container>::SafeQueue()
+{
+	queue_mutex_ = new std::mutex;
+	bool_mutex_ = new std::mutex;
+}
+
+template <class T, class Container>
+SafeQueue<T, Container>::SafeQueue(const SafeQueue& other)
+{
+	queue_ = other.queue_;
+	queue_mutex_ = other.queue_mutex_;
+	bool_mutex_ = other.bool_mutex_;
+}
+
+template <class T, class Container>
+SafeQueue<T, Container>::~SafeQueue()
+{
+	delete queue_mutex_;
+	delete bool_mutex_;
+}
 
 template <class T, class Container>
 typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::back()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	reference& val = queue_.back();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 
 	return val;
 }
@@ -40,10 +69,10 @@ typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::back()
 template <class T, class Container>
 typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::deque()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	reference& val = queue_.front();
 	queue_.pop();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 
 	return val;
 }
@@ -51,9 +80,9 @@ typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::deque()
 template <class T, class Container>
 bool SafeQueue<T, Container>::empty()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	const bool empty = queue_.empty();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 
 	return empty;
 }
@@ -61,9 +90,9 @@ bool SafeQueue<T, Container>::empty()
 template <class T, class Container>
 typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::front()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	reference& val = queue_.front();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 
 	return val;
 }
@@ -71,34 +100,52 @@ typename SafeQueue<T, Container>::reference& SafeQueue<T, Container>::front()
 template <class T, class Container>
 void SafeQueue<T, Container>::pop()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	queue_.pop();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 }
 
 template <class T, class Container>
 void SafeQueue<T, Container>::push(const value_type& val)
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	queue_.push(val);
-	mutex_.unlock();
+	queue_mutex_->unlock();
 }
 
 template <class T, class Container>
 void SafeQueue<T, Container>::push(value_type&& val)
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	queue_.push(val);
-	mutex_.unlock();
+	queue_mutex_->unlock();
 }
 
 template <class T, class Container>
 typename SafeQueue<T, Container>::size_type SafeQueue<T, Container>::size()
 {
-	mutex_.lock();
+	queue_mutex_->lock();
 	size_type size = queue_.size();
-	mutex_.unlock();
+	queue_mutex_->unlock();
 
 	return size;
+}
+
+template <class T, class Container>
+void SafeQueue<T, Container>::set_done(bool status)
+{
+	bool_mutex_->lock();
+	done_ = status;
+	bool_mutex_->unlock();
+}
+
+template <class T, class Container>
+bool SafeQueue<T, Container>::is_done()
+{
+	bool_mutex_->lock();
+	const bool done = done_;
+	bool_mutex_->unlock();
+
+	return done;
 }
 

@@ -17,6 +17,7 @@ class Cache
 public:
 	Cache();
 	Cache(unsigned long, unsigned long, bool);
+	Cache(const Cache&);
 
 	~Cache();
 
@@ -24,4 +25,6 @@ public:
 	unsigned long get_ways() const;
 	std::string hit(unsigned long);
 	void insert_data(unsigned long, unsigned long);
+
+	//Cache operator=(const Cache&) const;
 };

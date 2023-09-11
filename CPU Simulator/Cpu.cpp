@@ -17,12 +17,28 @@ Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity,
 {
 	cpu_id_++;
 
+	cores_ = new Core* [num_core_threads];
+
 	for (int i = 0; i < num_core_threads; i++)
 	{
+		//safe_queue_vector_.emplace_back();
+
+		/*
 		cores_.emplace_back(l1_cache_size, associativity, "cpu" 
 			+ std::to_string(cpu_id_) + "_core" + std::to_string(i) 
 			+ "_output.txt", &l3_cache_);
+			*/
+
+		cores_[i] = new Core(l1_cache_size, associativity, "cpu"
+			+ std::to_string(cpu_id_) + "_core" + std::to_string(i)
+			+ "_output.txt", &l3_cache_);
 	}
+}
+
+Cpu::~Cpu()
+{
+	delete[] cores_;
+	delete cores_;
 }
 
 void Cpu::read_in_data(std::string filename, std::vector<unsigned long>* data_queue)
@@ -87,10 +103,10 @@ void Cpu::ProcessData()
 
 			while (!infile.eof())
 			{
-				for (auto& core : cores_)
+				for (int i = 0; i < num_core_threads_; i++)
 				{
 					infile >> entry;
-					core.pass_data(entry); // Replace with thread later
+					cores_[i]->pass_data(entry); // Replace with thread later
 				}
 			}
 
@@ -98,6 +114,43 @@ void Cpu::ProcessData()
 		}
 	}
 }
+
+void Cpu::ProcessData2()
+{
+	std::vector<std::thread> core_threads;
+
+	for (int i = 0; i < num_core_threads_; i++)
+	{
+		core_threads.emplace_back(&Core::read_data, cores_[i]);
+	}
+
+	for (auto& filename : filename_vector_)
+	{
+		std::ifstream infile(filename, std::ios::binary);
+
+		if (infile.is_open())
+		{
+			unsigned long entry;
+
+			while (!infile.eof())
+			{
+				for (int i = 0; i < num_core_threads_; i++)
+				{
+					infile >> entry;
+					cores_[i]->data_queue_.push(entry);
+				}
+			}
+
+			infile.close();
+		}
+	}
+
+	for (int i = 0; i < num_core_threads_; i++)
+	{
+		cores_[i]->data_queue_.set_done(true);
+	}
+}
+
 
 void Cpu::ProcessDataParallel()
 {
@@ -127,7 +180,7 @@ void Cpu::ProcessDataParallel()
 
 		for (auto& data : data_vector_arr[i])
 		{
-			cores_[0].pass_data(data);
+			cores_[0]->pass_data(data);
 		}
 
 		data_vector_arr[i].clear();
@@ -207,7 +260,7 @@ void Cpu::ProcessDataParallel2()
 
 	for (int i = 0; i < num_core_threads_; i++)
 	{
-		core_thread_vector.emplace_back(&Core::pass_data_parallel, &cores_[i], 
+		core_thread_vector.emplace_back(&Core::pass_data_parallel, cores_[i], 
 			&data_queue_ptr_vector_vector[i], &mutex_vectors[i], &bool_vectors[i]);
 	}
 
