@@ -8,23 +8,30 @@
 
 int Cpu::cpu_id_ = -1;
 
+Cpu::Cpu() : total_data_entries_(0), num_core_threads_(0) {}
 
-
-Cpu::Cpu() = default;
-
-Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity, 
-	std::vector<std::string>& data_filenames, const int num_data_threads, const int num_core_threads)
-	: num_core_threads_(num_core_threads), l3_cache_(l1_cache_size * 64, associativity * 2, true),
-	filename_vector_(data_filenames)
+Cpu::Cpu(const unsigned long long total_data_entries, const unsigned long l1_cache_size, const unsigned long associativity, 
+	std::vector<std::string>& data_filenames, const int num_core_threads)
+	: total_data_entries_(total_data_entries), num_core_threads_(num_core_threads),
+	l3_cache_(l1_cache_size * 64, associativity * 2, true, &l3_mutex_), filename_vector_(data_filenames)
 {
 	cpu_id_++;
 
 	for (int i = 0; i < num_core_threads; i++)
 	{
-		cores_.emplace_back(l1_cache_size, associativity, "cpu" 
-			+ std::to_string(cpu_id_) + "_core" + std::to_string(i) 
-			+ "_output.txt", &l3_cache_);
+		std::string filename = "cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(i) + "_output.txt";
+
+		outfile_vector_.emplace_back(filename);
+
+		cores_.emplace_back(total_data_entries / num_core_threads, l1_cache_size, 
+			associativity, &outfile_vector_[i], &l3_cache_);
 	}
+}
+
+Cpu::~Cpu()
+{
+	for (auto& outfile : outfile_vector_)
+		outfile.close();
 }
 
 /*
@@ -77,11 +84,6 @@ void Cpu::read_in_data2(std::queue<std::string>* file_queue, std::queue<unsigned
 }
 */
 
-void Cpu::create_threads()
-{
-
-}
-
 void Cpu::ProcessData()
 {
 	for(auto& filename : filename_vector_)
@@ -108,7 +110,38 @@ void Cpu::ProcessData()
 
 void Cpu::ProcessDataParallel()
 {
+	std::vector<std::thread> threads;
 
+	for (auto& core : cores_)
+	{
+		threads.emplace_back(&Core::pass_data_parallel, &core, &data_queue_, &data_mutex_);
+	}
+
+	for (auto& filename : filename_vector_)
+	{
+		std::ifstream infile(filename, std::ios::binary);
+
+		if (infile.is_open())
+		{
+			unsigned long entry;
+
+			while (!infile.eof())
+			{
+				infile >> entry;
+
+				data_mutex_.lock();
+				data_queue_.emplace(entry);
+				data_mutex_.unlock();
+			}
+
+			infile.close();
+		}
+	}
+
+	for (auto& thread : threads)
+	{
+		thread.join();
+	}
 }
 
 /*

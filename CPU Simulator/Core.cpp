@@ -7,16 +7,14 @@ Core::Core()
 	
 }
 
-Core::Core(const unsigned long l1_cache_size, const unsigned long associativity, const std::string& output_filename, Cache* l3_cache_ptr)
-	: l1_cache_(l1_cache_size, associativity, true), l2_cache_(l1_cache_size * 8, associativity / 2, false), l3_cache_ptr_(l3_cache_ptr)
+Core::Core(const unsigned long long core_data_entries, const unsigned long l1_cache_size, 
+	const unsigned long associativity, std::ofstream* outfile_ptr, Cache* l3_cache_ptr)
+	: core_data_entries_(core_data_entries), l1_cache_(l1_cache_size, associativity, true),
+	l2_cache_(l1_cache_size * 8, associativity / 2, false), l3_cache_ptr_(l3_cache_ptr)
 {
-	outfile_ptr_ = new std::ofstream(output_filename);
-}
-
-Core::~Core()
-{
-	outfile_ptr_->close();
-	delete outfile_ptr_;
+	//outfile_ptr_ = new std::ofstream(output_filename);
+	//outfile_name_ = output_filename;
+	outfile_ptr_ = outfile_ptr;
 }
 
 void Core::pass_data(const unsigned long data)
@@ -59,7 +57,24 @@ void Core::pass_data(const unsigned long data)
 	*outfile_ptr_ << '\n';
 }
 
+void Core::pass_data_parallel(std::queue<unsigned long>* data_queue, std::mutex* data_mutex)
+{
+	for (unsigned long long entries = 0; entries < core_data_entries_; entries++)
+	{
+		data_mutex->lock();
+		while (data_queue->empty())
+		{
+			data_mutex->unlock();
+			data_mutex->lock();
+		}
 
+		const unsigned long data = data_queue->front();
+		data_queue->pop();
+		data_mutex->unlock();
+
+		pass_data(data);
+	}
+}
 
 /*
 void Core::pass_data_parallel(std::vector<std::queue<unsigned long>*>* data_queues_ptr, 

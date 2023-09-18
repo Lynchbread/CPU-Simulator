@@ -27,9 +27,23 @@ unsigned long Cache::find(const unsigned long data)
 {
 	const unsigned long set = data % sets_;
 
-	for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
-		if (data == cache_[set][i - 1])
-			return i - 1;
+	if (l3_mutex_ptr_ == nullptr)
+	{
+		for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
+			if (data == cache_[set][i - 1])
+				return i - 1;
+	}
+	else
+	{
+		l3_mutex_ptr_->lock();
+		for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
+			if (data == cache_[set][i - 1])
+			{
+				l3_mutex_ptr_->unlock();
+				return i - 1;
+			}
+		l3_mutex_ptr_->unlock();
+	}
 
 	return ways_;
 }
@@ -37,26 +51,65 @@ unsigned long Cache::find(const unsigned long data)
 // Not thread safe
 std::string Cache::get_miss_type(const unsigned long data)
 {
-	if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+	if (l3_mutex_ptr_ == nullptr)
 	{
-		compulsory_vector_[data] = true;
-		return "Compulsory MISS";
-	}
+		if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+		{
+			compulsory_vector_[data] = true;
+			return "Compulsory MISS";
+		}
 
-	if (!full_)
+		if (!full_)
+		{
+			full_ = true;
+
+			for (unsigned long i = 0; full_ && i < sets_; i++)
+				if (cache_[i].size() < ways_)
+					full_ = false;
+		}
+
+		if (full_)
+			return "Capacity   MISS";
+	}
+	else
 	{
-		full_ = true;
+		l3_mutex_ptr_->lock();
+		if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+		{
+			compulsory_vector_[data] = true;
+			l3_mutex_ptr_->unlock();
+			return "Compulsory MISS";
+		}
+		//l3_mutex_ptr_->unlock();
 
-		for (unsigned long i = 0; full_ && i < sets_; i++)
-			if (cache_[i].size() < ways_)
-				full_ = false;
+		//l3_mutex_ptr_->lock();
+		if (!full_)
+		{
+			full_ = true;
+
+			for (unsigned long i = 0; full_ && i < sets_; i++)
+			{
+				//l3_mutex_ptr_->lock();
+
+				if (cache_[i].size() < ways_)
+					full_ = false;
+
+				//l3_mutex_ptr_->unlock();
+			}
+		}
+
+		if (full_)
+		{
+			l3_mutex_ptr_->unlock();
+			return "Capacity   MISS";
+		}
+
+		l3_mutex_ptr_->unlock();
 	}
-
-	if (full_)
-		return "Capacity   MISS";
 
 	return"Conflict   MISS";
 }
+
 
 // Thread safe
 unsigned long Cache::get_ways() const { return ways_; }
@@ -83,16 +136,40 @@ void Cache::insert_data(const unsigned long data, const unsigned long way)
 {
 	const unsigned long set = data % sets_;
 
-	if (way < ways_)
+	if (l3_mutex_ptr_ == nullptr)
 	{
-		cache_[set].erase(cache_[set].begin() + way);
-		cache_[set].push_back(data);
+		if (way < ways_)
+		{
+			cache_[set].erase(cache_[set].begin() + way);
+			cache_[set].push_back(data);
+		}
+		else
+		{
+			cache_[set].push_back(data);
+		}
+
+		if (cache_[set].size() > ways_)
+			cache_[set].erase(cache_[set].begin());
 	}
 	else
 	{
-		cache_[set].push_back(data);
-	}
+		if (way < ways_)
+		{
+			l3_mutex_ptr_->lock();
+			cache_[set].erase(cache_[set].begin() + way);
+			cache_[set].push_back(data);
+			//l3_mutex_ptr_->unlock();
+		}
+		else
+		{
+			l3_mutex_ptr_->lock();
+			cache_[set].push_back(data);
+			//l3_mutex_ptr_->unlock();
+		}
 
-	if (cache_[set].size() > ways_)
-		cache_[set].erase(cache_[set].begin());
+		//l3_mutex_ptr_->lock();
+		if (cache_[set].size() > ways_)
+			cache_[set].erase(cache_[set].begin());
+		l3_mutex_ptr_->unlock();
+	}
 }
