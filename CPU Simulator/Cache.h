@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,8 @@ class Cache
 
 	bool full_;
 
+	std::mutex* l3_mutex_ptr_;
+
 	std::vector<unsigned long>* cache_;
 	std::vector<bool> compulsory_vector_;
 
@@ -16,7 +19,7 @@ class Cache
 
 public:
 	Cache();
-	Cache(unsigned long, unsigned long, bool);
+	Cache(unsigned long, unsigned long, bool, std::mutex* = nullptr);
 
 	~Cache();
 

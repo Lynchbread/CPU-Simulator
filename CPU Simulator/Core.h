@@ -20,5 +20,6 @@ public:
 	~Core();
 
 	void pass_data(unsigned long);
-	void pass_data_parallel(std::vector<std::queue<unsigned long>*>*, std::vector<std::mutex*>*, std::vector<bool*>*);
+	void pass_data_parallel();
+	//void pass_data_parallel(std::vector<std::queue<unsigned long>*>*, std::vector<std::mutex*>*, std::vector<bool*>*);
 };

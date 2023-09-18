@@ -3,25 +3,31 @@
 #include <mutex>
 #include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "Core.h"
 
 class Cpu
 {
-	//template <typename T> std::vector<std::vector<T*>> SplitVector(std::vector<T>*, int splits);
-
 	static int cpu_id_;
 
-	int num_data_threads_;
+	//int num_data_threads_;
 	int num_core_threads_;
 
 	Cache l3_cache_;
 
 	std::vector <Core> cores_;
+	std::vector<std::thread> threads_;
 	std::vector<std::string> filename_vector_;
-	static void read_in_data(std::string, std::vector<unsigned long>*);
-	static void read_in_data2(std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*, bool*);
+	std::queue<unsigned long> data_queue_;
+	std::mutex data_mutex_;
+
+	void create_threads();
+
+
+	//static void read_in_data(std::string, std::vector<unsigned long>*);
+	//static void read_in_data2(std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*, bool*);
 
 public:
 	Cpu();
@@ -29,33 +35,7 @@ public:
 
 	void ProcessData();
 	void ProcessDataParallel();
-	void ProcessDataParallel2();
 
-	//static void generate_threads(int, std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*);
+	//void ProcessDataParallel();
+	//void ProcessDataParallel2();
 };
-
-/*
-template <typename T>
-std::vector<std::vector<T*>> Cpu::SplitVector(std::vector<T>* original_vector, int splits)
-{
-	std::vector<std::vector<T*>> split_vectors;
-
-	for (int i = 0; i < splits; i++)
-	{
-		split_vectors.emplace_back();
-	}
-
-	for (unsigned long long i = 0; i < original_vector->size();)
-	{
-		for (std::vector<T*>& split_vector : split_vectors)
-		{
-			if (i < original_vector->size())
-			{
-				split_vector.push_back(&(*original_vector)[i]);
-				i++;
-			}
-		}
-	}
-
-	return split_vectors;
-}*/

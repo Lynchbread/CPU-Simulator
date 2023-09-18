@@ -8,12 +8,14 @@
 
 int Cpu::cpu_id_ = -1;
 
+
+
 Cpu::Cpu() = default;
 
 Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity, 
 	std::vector<std::string>& data_filenames, const int num_data_threads, const int num_core_threads)
-	: num_data_threads_(num_data_threads), num_core_threads_(num_core_threads),
-	l3_cache_(l1_cache_size * 64, associativity * 2, true), filename_vector_(data_filenames)
+	: num_core_threads_(num_core_threads), l3_cache_(l1_cache_size * 64, associativity * 2, true),
+	filename_vector_(data_filenames)
 {
 	cpu_id_++;
 
@@ -25,10 +27,9 @@ Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity,
 	}
 }
 
+/*
 void Cpu::read_in_data(std::string filename, std::vector<unsigned long>* data_queue)
 {
-	std::cout << "Thread Created\n";
-
 	std::ifstream infile(filename, std::ios::binary);
 
 	if (infile.is_open())
@@ -74,6 +75,12 @@ void Cpu::read_in_data2(std::queue<std::string>* file_queue, std::queue<unsigned
 		}
 	}
 }
+*/
+
+void Cpu::create_threads()
+{
+
+}
 
 void Cpu::ProcessData()
 {
@@ -99,6 +106,12 @@ void Cpu::ProcessData()
 	}
 }
 
+void Cpu::ProcessDataParallel()
+{
+
+}
+
+/*
 void Cpu::ProcessDataParallel()
 {
 	//auto mutex_arr = new std::mutex[filename_vector_.size()];
@@ -139,7 +152,8 @@ void Cpu::ProcessDataParallel()
 		data_threads.pop();
 	}
 }
-
+*/
+/*
 void Cpu::ProcessDataParallel2()
 {
 	// Each data thread gets only 1 data queue.
@@ -221,17 +235,4 @@ void Cpu::ProcessDataParallel2()
 	delete[] bool_arr;
 
 }
-/*
-void Cpu::generate_threads(int thread_limit, std::queue<std::string>* file_queue, 
-	std::queue<unsigned long>* data_queue_arr, std::mutex* mutex_arr)
-{
-	std::queue<std::thread> threads;
-
-	while (!file_queue->empty())
-	{
-		threads.emplace(read_in_data, file_queue->front(), 
-			data_queues->front(), mutex_queue->front());
-		file_queue->pop();
-
-	}
-}*/
+*/

@@ -5,10 +5,12 @@ Cache::Cache() : ways_(0), sets_(0)
 	
 }
 
-Cache::Cache(const unsigned long cache_size, const unsigned long associativity, const bool need_compulsory_vector)
+Cache::Cache(const unsigned long cache_size, const unsigned long associativity,
+	const bool need_compulsory_vector, std::mutex* l3_mutex_ptr)
 	: ways_(associativity), sets_(cache_size / associativity)
 {
 	full_ = false;
+	l3_mutex_ptr_ = l3_mutex_ptr;
 	cache_ = new std::vector<unsigned long>[sets_];
 
 	if (need_compulsory_vector)

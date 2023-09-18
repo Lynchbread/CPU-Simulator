@@ -59,6 +59,9 @@ void Core::pass_data(const unsigned long data)
 	*outfile_ptr_ << '\n';
 }
 
+
+
+/*
 void Core::pass_data_parallel(std::vector<std::queue<unsigned long>*>* data_queues_ptr, 
 	std::vector<std::mutex*>* mutex_vector_ptr, std::vector<bool*>* bool_vector_ptr)
 {
@@ -84,6 +87,6 @@ void Core::pass_data_parallel(std::vector<std::queue<unsigned long>*>* data_queu
 		(*mutex_vector_ptr)[i]->unlock();
 	}
 }
-
+*/
 
 
