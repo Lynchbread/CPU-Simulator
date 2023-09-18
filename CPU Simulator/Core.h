@@ -1,6 +1,5 @@
 #pragma once
 #include <fstream>
-#include <mutex>
 #include <queue>
 #include <string>
 
@@ -19,6 +18,6 @@ public:
 	Core(unsigned long, unsigned long, const std::string&, Cache*);
 	~Core();
 
-	void pass_data(unsigned long);
+	void pass_data(unsigned long, std::vector<std::mutex*>* = nullptr);
 	void pass_data_parallel(std::vector<std::queue<unsigned long>*>*, std::vector<std::mutex*>*, std::vector<bool*>*);
 };

@@ -21,37 +21,89 @@ Cache::~Cache()
 }
 
 // Not thread safe
-unsigned long Cache::find(const unsigned long data)
+unsigned long Cache::find(const unsigned long data, std::vector<std::mutex*>* mutexes)
 {
 	const unsigned long set = data % sets_;
 
-	for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
-		if (data == cache_[set][i - 1])
-			return i - 1;
+	if (mutexes == nullptr)
+	{
+		for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
+			if (data == cache_[set][i - 1])
+				return i - 1;
+	}
+	else
+	{
+		(*mutexes)[0]->lock();
+		for (auto i = static_cast<unsigned long>(cache_[set].size()); i > 0; --i)
+			if (data == cache_[set][i - 1])
+			{
+				(*mutexes)[0]->unlock();
+				return i - 1;
+			}
+		(*mutexes)[0]->unlock();
+	}
 
 	return ways_;
 }
 
 // Not thread safe
-std::string Cache::get_miss_type(const unsigned long data)
+std::string Cache::get_miss_type(const unsigned long data, std::vector<std::mutex*>* mutexes)
 {
-	if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+	if (mutexes == nullptr)
 	{
-		compulsory_vector_[data] = true;
-		return "Compulsory MISS";
-	}
+		if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+		{
+			compulsory_vector_[data] = true;
+			return "Compulsory MISS";
+		}
 
-	if (!full_)
+		if (!full_)
+		{
+			full_ = true;
+
+			for (unsigned long i = 0; full_ && i < sets_; i++)
+				if (cache_[i].size() < ways_)
+					full_ = false;
+		}
+
+		if (full_)
+			return "Capacity   MISS";
+	}
+	else
 	{
-		full_ = true;
+		(*mutexes)[1]->lock();
+		if (!compulsory_vector_.empty() && !compulsory_vector_[data])
+		{
+			compulsory_vector_[data] = true;
+			(*mutexes)[1]->unlock();
+			return "Compulsory MISS";
+		}
+		(*mutexes)[1]->unlock();
 
-		for (unsigned long i = 0; full_ && i < sets_; i++)
-			if (cache_[i].size() < ways_)
-				full_ = false;
+		(*mutexes)[2]->lock();
+		if (!full_)
+		{
+			full_ = true;
+
+			for (unsigned long i = 0; full_ && i < sets_; i++)
+			{
+				(*mutexes)[0]->lock();
+
+				if (cache_[i].size() < ways_)
+					full_ = false;
+
+				(*mutexes)[0]->unlock();
+			}
+		}
+
+		if (full_)
+		{
+			(*mutexes)[2]->unlock();
+			return "Capacity   MISS";
+		}
+
+		(*mutexes)[2]->unlock();
 	}
-
-	if (full_)
-		return "Capacity   MISS";
 
 	return"Conflict   MISS";
 }
@@ -60,37 +112,63 @@ std::string Cache::get_miss_type(const unsigned long data)
 unsigned long Cache::get_ways() const { return ways_; }
 
 // Thread safe
-std::string Cache::hit(const unsigned long data)
+std::string Cache::hit(const unsigned long data, std::vector<std::mutex*>* mutexes)
 {
 	std::string hit_type;
-	const auto location = find(data);
+	const auto location = find(data, mutexes);
 	const unsigned long set = data % sets_;
 
 	if (location < ways_)
 		hit_type = "HIT";
 	else
-		hit_type = get_miss_type(data);
+		hit_type = get_miss_type(data, mutexes);
 
-	insert_data(data, location);
+	insert_data(data, location, mutexes);
 
 	return hit_type;
 }
 
 // Not thread safe
-void Cache::insert_data(const unsigned long data, const unsigned long way)
+void Cache::insert_data(const unsigned long data, const unsigned long way, std::vector<std::mutex*>* mutexes)
 {
 	const unsigned long set = data % sets_;
 
-	if (way < ways_)
+	if (mutexes == nullptr)
 	{
-		cache_[set].erase(cache_[set].begin() + way);
-		cache_[set].push_back(data);
+		if (way < ways_)
+		{
+			cache_[set].erase(cache_[set].begin() + way);
+			cache_[set].push_back(data);
+		}
+		else
+		{
+			cache_[set].push_back(data);
+		}
+
+		if (cache_[set].size() > ways_)
+			cache_[set].erase(cache_[set].begin());
 	}
 	else
 	{
-		cache_[set].push_back(data);
+		if (way < ways_)
+		{
+			(*mutexes)[0]->lock();
+			cache_[set].erase(cache_[set].begin() + way);
+			cache_[set].push_back(data);
+			(*mutexes)[0]->unlock();
+		}
+		else
+		{
+			(*mutexes)[0]->lock();
+			cache_[set].push_back(data);
+			(*mutexes)[0]->unlock();
+		}
+
+		(*mutexes)[0]->lock();
+		if (cache_[set].size() > ways_)
+			cache_[set].erase(cache_[set].begin());
+		(*mutexes)[0]->unlock();
 	}
 
-	if (cache_[set].size() > ways_)
-		cache_[set].erase(cache_[set].begin());
+	
 }

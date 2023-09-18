@@ -19,7 +19,7 @@ Core::~Core()
 	delete outfile_ptr_;
 }
 
-void Core::pass_data(const unsigned long data)
+void Core::pass_data(const unsigned long data, std::vector<std::mutex*>* mutexes)
 {
 	constexpr int spacing = 18;
 	const std::string l1_result = l1_cache_.hit(data);

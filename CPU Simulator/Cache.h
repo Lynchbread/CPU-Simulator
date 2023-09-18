@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,7 @@ class Cache
 	std::vector<unsigned long>* cache_;
 	std::vector<bool> compulsory_vector_;
 
-	std::string get_miss_type(unsigned long);
+	std::string get_miss_type(unsigned long, std::vector<std::mutex*>* = nullptr);
 
 public:
 	Cache();
@@ -20,8 +21,8 @@ public:
 
 	~Cache();
 
-	unsigned long find(unsigned long);
+	unsigned long find(unsigned long, std::vector<std::mutex*>* = nullptr);
 	unsigned long get_ways() const;
-	std::string hit(unsigned long);
-	void insert_data(unsigned long, unsigned long);
+	std::string hit(unsigned long, std::vector<std::mutex*>* = nullptr);
+	void insert_data(unsigned long, unsigned long, std::vector<std::mutex*>* = nullptr);
 };
