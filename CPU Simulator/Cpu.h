@@ -12,32 +12,27 @@ class Cpu
 {
 	static int cpu_id_;
 
-	unsigned long long total_data_entries_;
+	const unsigned long mutex_0_size_;
 
-	//int num_data_threads_;
 	int num_core_threads_;
+	unsigned long l1_cache_size_;
+	unsigned long associativity_;
 
 	Cache l3_cache_;
 
-	std::vector <Core> cores_;
 	std::vector<std::string> filename_vector_;
-	std::vector<std::ofstream> outfile_vector_;
-	std::queue<unsigned long> data_queue_;
-	std::mutex data_mutex_;
-	std::mutex l3_mutex_;
+	//std::mutex l3_mutex_;
+	// 0 = cache, 1 = compulsory, 2 = bool
+	std::mutex* l3_mutex_arr_[3];
+	//std::vector<std::mutex*>* l3_mutexes_;
 
-
-	//static void read_in_data(std::string, std::vector<unsigned long>*);
-	//static void read_in_data2(std::queue<std::string>*, std::queue<unsigned long>*, std::mutex*, bool*);
+	void run_core(std::vector<std::string>);
 
 public:
 	Cpu();
-	Cpu(unsigned long long, unsigned long, unsigned long, std::vector<std::string>&, int = 1);
+	Cpu(unsigned long, unsigned long, std::vector<std::string>, int = 1);
 	~Cpu();
 
 	void ProcessData();
 	void ProcessDataParallel();
-
-	//void ProcessDataParallel();
-	//void ProcessDataParallel2();
 };

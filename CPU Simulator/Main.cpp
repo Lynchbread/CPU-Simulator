@@ -16,20 +16,20 @@ int main()
 {
 	constexpr unsigned long long data_entries = 8388608;
 	constexpr unsigned long memory_addresses = 262144;
-	constexpr unsigned long l1_cache_size = 256;
+	constexpr unsigned long l1_cache_size = 128;
 	constexpr unsigned long associativity = 8;
 	int cpu_cores = 1;
 
 	std::vector<std::string> data_filenames(generate_lists(data_entries, memory_addresses - 1));
 
 	{
-		//Cpu cpu(data_entries, l1_cache_size, associativity, data_filenames);
+		//Cpu cpu(l1_cache_size, associativity, data_filenames, 4);
 		//auto process_data_ptr = &Cpu::ProcessData;
 		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
 
 	{
-		Cpu cpu(data_entries, l1_cache_size, associativity, data_filenames, 4);
+		Cpu cpu(l1_cache_size, associativity, data_filenames, 4);
 		const auto process_data_ptr = &Cpu::ProcessDataParallel;
 		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}

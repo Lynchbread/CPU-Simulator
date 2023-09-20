@@ -8,61 +8,33 @@
 
 int Cpu::cpu_id_ = -1;
 
-Cpu::Cpu() : total_data_entries_(0), num_core_threads_(0) {}
+Cpu::Cpu() : mutex_0_size_(0), num_core_threads_(0), l1_cache_size_(0), associativity_(0) {}
 
-Cpu::Cpu(const unsigned long long total_data_entries, const unsigned long l1_cache_size, const unsigned long associativity, 
-	std::vector<std::string>& data_filenames, const int num_core_threads)
-	: total_data_entries_(total_data_entries), num_core_threads_(num_core_threads),
-	l3_cache_(l1_cache_size * 64, associativity * 2, true, &l3_mutex_), filename_vector_(data_filenames)
+Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity, 
+	std::vector<std::string> data_filenames, const int num_core_threads)
+	: mutex_0_size_(l1_cache_size * 192 / (associativity * 2)), num_core_threads_(num_core_threads), l1_cache_size_(l1_cache_size), associativity_(associativity),
+	l3_cache_(l1_cache_size * 192, associativity * 2, true), filename_vector_(std::move(data_filenames))
 {
 	cpu_id_++;
 
-	for (int i = 0; i < num_core_threads; i++)
-	{
-		std::string filename = "cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(i) + "_output.txt";
-
-		outfile_vector_.emplace_back(filename);
-
-		cores_.emplace_back(total_data_entries / num_core_threads, l1_cache_size, 
-			associativity, &outfile_vector_[i], &l3_cache_);
-	}
+	l3_mutex_arr_[0] = new std::mutex[mutex_0_size_];
+	l3_mutex_arr_[1] = new std::mutex;
+	l3_mutex_arr_[2] = new std::mutex;
 }
 
-Cpu::~Cpu()
+void Cpu::run_core(std::vector<std::string> filename_vector)
 {
-	for (auto& outfile : outfile_vector_)
-		outfile.close();
-}
+	static int core_num = -1;
+	core_num++;
 
-/*
-void Cpu::read_in_data(std::string filename, std::vector<unsigned long>* data_queue)
-{
-	std::ifstream infile(filename, std::ios::binary);
+	std::ofstream outfile("cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(core_num) + "_output.txt");
 
-	if (infile.is_open())
+	Core core(l1_cache_size_, associativity_, &outfile, &l3_cache_);
+	
+	for (auto& filename : filename_vector)
 	{
-		unsigned long entry;
-
-		while (!infile.eof())
-		{
-			infile >> entry;
-			data_queue->push_back(entry);
-		}
-
-		infile.close();
-	}
-}
-
-void Cpu::read_in_data2(std::queue<std::string>* file_queue, std::queue<unsigned long>* data_queue, 
-	std::mutex* data_mutex, bool* done)
-{
-	std::cout << "Thread Created2\n";
-
-	while (!file_queue->empty())
-	{
-		std::ifstream infile(file_queue->front(), std::ios::binary);
-		file_queue->pop();
-
+		std::ifstream infile(filename, std::ios::binary);
+		
 		if (infile.is_open())
 		{
 			unsigned long entry;
@@ -70,22 +42,33 @@ void Cpu::read_in_data2(std::queue<std::string>* file_queue, std::queue<unsigned
 			while (!infile.eof())
 			{
 				infile >> entry;
-				data_mutex->lock();
-				data_queue->push(entry);
-				data_mutex->unlock();
+				core.pass_data(entry);
 			}
 
 			infile.close();
-			data_mutex->lock();
-			*done = true;
-			data_mutex->unlock();
 		}
 	}
+
+	outfile.close();
 }
-*/
+
+Cpu::~Cpu()
+{
+	delete[] l3_mutex_arr_[0];
+}
+
 
 void Cpu::ProcessData()
 {
+	auto* outfile_arr = new std::ofstream[num_core_threads_];
+	auto* cores = new Core* [num_core_threads_];
+
+	for (int i = 0; i < num_core_threads_; i++)
+	{
+		outfile_arr[i].open("cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(i) + "_output.txt");
+		cores[i] = new Core(l1_cache_size_, associativity_, &outfile_arr[i], &l3_cache_);
+	}
+
 	for(auto& filename : filename_vector_)
 	{
 		std::ifstream infile(filename, std::ios::binary);
@@ -96,176 +79,47 @@ void Cpu::ProcessData()
 
 			while (!infile.eof())
 			{
-				for (auto& core : cores_)
+				for (int i = 0; i < num_core_threads_; i++)
 				{
 					infile >> entry;
-					core.pass_data(entry); // Replace with thread later
+					cores[i]->pass_data(entry);
 				}
 			}
 
 			infile.close();
 		}
 	}
+
+	for (int i = 0; i < num_core_threads_; i++)
+	{
+		outfile_arr[i].close();
+		delete cores[i];
+	}
+
+	delete[] outfile_arr;
+	delete[] cores;
 }
 
 void Cpu::ProcessDataParallel()
 {
-	std::vector<std::thread> threads;
-
-	for (auto& core : cores_)
-	{
-		threads.emplace_back(&Core::pass_data_parallel, &core, &data_queue_, &data_mutex_);
-	}
-
-	for (auto& filename : filename_vector_)
-	{
-		std::ifstream infile(filename, std::ios::binary);
-
-		if (infile.is_open())
-		{
-			unsigned long entry;
-
-			while (!infile.eof())
-			{
-				infile >> entry;
-
-				data_mutex_.lock();
-				data_queue_.emplace(entry);
-				data_mutex_.unlock();
-			}
-
-			infile.close();
-		}
-	}
-
-	for (auto& thread : threads)
-	{
-		thread.join();
-	}
-}
-
-/*
-void Cpu::ProcessDataParallel()
-{
-	//auto mutex_arr = new std::mutex[filename_vector_.size()];
-	//auto data_queues_arr = new std::queue<unsigned long, std::list<unsigned long>>[filename_vector_.size()];
-	auto data_vector_arr = new std::vector<unsigned long>[filename_vector_.size()];
-
-	int thread_count = 0;
-	std::queue<std::thread> data_threads;
-
-	for (; data_threads.size() < num_data_threads_ && data_threads.size() < filename_vector_.size(); thread_count++)
-	{
-		data_threads.emplace(read_in_data, filename_vector_[thread_count],
-			&data_vector_arr[thread_count]);
-	}
-
-	for (int i = 0; i < filename_vector_.size(); i++)
-	{
-		data_threads.front().join();
-		data_threads.pop();
-
-		for (; data_threads.size() < num_data_threads_ && thread_count < filename_vector_.size(); thread_count++)
-		{
-			data_threads.emplace(read_in_data, filename_vector_[thread_count],
-				&data_vector_arr[thread_count]);
-		}
-
-		for (auto& data : data_vector_arr[i])
-		{
-			cores_[0].pass_data(data);
-		}
-
-		data_vector_arr[i].clear();
-	}
-
-	while (!data_threads.empty())
-	{
-		data_threads.front().join();
-		data_threads.pop();
-	}
-}
-*/
-/*
-void Cpu::ProcessDataParallel2()
-{
-	// Each data thread gets only 1 data queue.
-	// Each core can have more than 1, or even share 1.
-
-	std::vector<std::queue<std::string>> file_queue_vector;
-	std::vector<std::queue<unsigned long>> data_queue_vector; // pass to read in
-	std::vector<std::vector<std::queue<unsigned long>*>> data_queue_ptr_vector_vector; // pass to cores
-	auto mutex_arr = new std::mutex[num_data_threads_];
-	std::vector<std::vector<std::mutex*>> mutex_vectors;
-	std::vector<std::thread> data_thread_vector;
-	std::vector<std::thread> core_thread_vector;
-
-	//std::vector<int> bool_vector (num_data_threads_, 0);
-	auto bool_arr = new bool[num_data_threads_];
-	std::vector<std::vector<bool*>> bool_vectors;
-
-	// initialize queues
-	for (int i = 0; i < num_data_threads_; i++)
-	{
-		file_queue_vector.emplace_back();
-		data_queue_vector.emplace_back();
-		bool_arr[i] = false;
-	}
-
-	// Combined
-	for (int i = 0; i < num_core_threads_; i++)
-	{
-		data_queue_ptr_vector_vector.emplace_back();
-		mutex_vectors.emplace_back();
-		bool_vectors.emplace_back();
-	}
-
-	for (int i = 0; i < num_data_threads_ || i < num_core_threads_;)
-	{
-		for (int j = 0; j < num_core_threads_ && i < num_data_threads_; i++, j++)
-		{
-			data_queue_ptr_vector_vector[j].push_back(&data_queue_vector[i]);
-			mutex_vectors[j].push_back(&mutex_arr[i]);
-			bool_vectors[j].push_back(&bool_arr[i]);
-		}
-
-		for (int j = 0; i < num_core_threads_ && j < num_data_threads_; i++, j++)
-		{
-			data_queue_ptr_vector_vector[i].push_back(&data_queue_vector[j]);
-			mutex_vectors[i].push_back(&mutex_arr[j]);
-			bool_vectors[i].push_back(&bool_arr[j]);
-		}
-	}
-
-	// replace with SplitVector functions later
-	for (int i = 0; i < filename_vector_.size();)
-	{
-		for (int j = 0; i < filename_vector_.size() && j < num_data_threads_; i++, j++)
-		{
-			file_queue_vector[j].push(filename_vector_[i]);
-		}
-	}
-
-	for (int i = 0; i < num_data_threads_; i++)
-	{
-		data_thread_vector.emplace_back(read_in_data2, &file_queue_vector[i],
-			&data_queue_vector[i], &mutex_arr[i], &bool_arr[i]);
-	}
+	l3_cache_.give_mutexes(l3_mutex_arr_, num_core_threads_);
+	//std::vector<std::thread> threads;
+	auto* threads = new std::thread*[num_core_threads_];
+	std::vector<std::vector<std::string>> filename_vectors;
 
 	for (int i = 0; i < num_core_threads_; i++)
-	{
-		core_thread_vector.emplace_back(&Core::pass_data_parallel, &cores_[i], 
-			&data_queue_ptr_vector_vector[i], &mutex_vectors[i], &bool_vectors[i]);
-	}
+		filename_vectors.emplace_back();
 
-	for (auto& thread : data_thread_vector)
-		thread.join();
+	for (unsigned long i = 0; i < filename_vector_.size();)
+		for (int j = 0; j < num_core_threads_ && i < filename_vector_.size(); i++, j++)
+			filename_vectors[j].push_back(filename_vector_[i]);
 
-	for (auto& thread : core_thread_vector)
-		thread.join();
+	//for (int i = 0; i < num_core_threads_; i++)
+		//threads.emplace_back(&Cpu::run_core, this, filename_vectors[i]);
 
-	delete[] mutex_arr;
-	delete[] bool_arr;
+	for (int i = 0; i < num_core_threads_; i++)
+		threads[i] = new std::thread(&Cpu::run_core, this, filename_vectors[i]);
 
+	for (int i = 0; i < num_core_threads_; i++)
+		threads[i]->join();
 }
-*/
