@@ -12,7 +12,7 @@ class Cpu
 {
 	static int cpu_id_;
 
-	const unsigned long mutex_0_size_;
+	const unsigned long mutex_arr_size_;
 
 	int num_core_threads_;
 	unsigned long l1_cache_size_;
@@ -21,12 +21,9 @@ class Cpu
 	Cache l3_cache_;
 
 	std::vector<std::string> filename_vector_;
-	//std::mutex l3_mutex_;
-	// 0 = cache, 1 = compulsory, 2 = bool
-	std::mutex* l3_mutex_arr_[3];
-	//std::vector<std::mutex*>* l3_mutexes_;
+	std::mutex* l3_mutex_arr_;
 
-	void run_core(std::vector<std::string>);
+	void run_core(const std::vector<std::string>&);
 
 public:
 	Cpu();

@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <list>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -22,7 +23,4 @@ public:
 	~Core();
 
 	void pass_data(unsigned long);
-	void pass_data_parallel(std::queue<unsigned long>*, std::mutex*);
-
-	//void pass_data_parallel(std::vector<std::queue<unsigned long>*>*, std::vector<std::mutex*>*, std::vector<bool*>*);
 };

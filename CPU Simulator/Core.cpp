@@ -1,7 +1,7 @@
 #include "Core.h"
 
 #include <iomanip>
-#include <iostream>
+#include <list>
 
 Core::Core()
 {
@@ -68,5 +68,3 @@ void Core::pass_data(const unsigned long data)
 
 	*outfile_ptr_ << '\n';
 }
-
-

@@ -8,21 +8,19 @@
 
 int Cpu::cpu_id_ = -1;
 
-Cpu::Cpu() : mutex_0_size_(0), num_core_threads_(0), l1_cache_size_(0), associativity_(0) {}
+Cpu::Cpu() : mutex_arr_size_(0), num_core_threads_(0), l1_cache_size_(0), associativity_(0) {}
 
 Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity, 
 	std::vector<std::string> data_filenames, const int num_core_threads)
-	: mutex_0_size_(l1_cache_size * 192 / (associativity * 2)), num_core_threads_(num_core_threads), l1_cache_size_(l1_cache_size), associativity_(associativity),
+	: mutex_arr_size_(l1_cache_size * 192 / (associativity * 2)), num_core_threads_(num_core_threads), l1_cache_size_(l1_cache_size), associativity_(associativity),
 	l3_cache_(l1_cache_size * 192, associativity * 2, true), filename_vector_(std::move(data_filenames))
 {
 	cpu_id_++;
 
-	l3_mutex_arr_[0] = new std::mutex[mutex_0_size_];
-	l3_mutex_arr_[1] = new std::mutex;
-	l3_mutex_arr_[2] = new std::mutex;
+	l3_mutex_arr_ = new std::mutex[mutex_arr_size_];
 }
 
-void Cpu::run_core(std::vector<std::string> filename_vector)
+void Cpu::run_core(const std::vector<std::string>& filename_vector)
 {
 	static int core_num = -1;
 	core_num++;
@@ -54,7 +52,7 @@ void Cpu::run_core(std::vector<std::string> filename_vector)
 
 Cpu::~Cpu()
 {
-	delete[] l3_mutex_arr_[0];
+	delete[] l3_mutex_arr_;
 }
 
 
@@ -103,7 +101,7 @@ void Cpu::ProcessData()
 void Cpu::ProcessDataParallel()
 {
 	l3_cache_.give_mutexes(l3_mutex_arr_, num_core_threads_);
-	//std::vector<std::thread> threads;
+
 	auto* threads = new std::thread*[num_core_threads_];
 	std::vector<std::vector<std::string>> filename_vectors;
 
@@ -114,12 +112,11 @@ void Cpu::ProcessDataParallel()
 		for (int j = 0; j < num_core_threads_ && i < filename_vector_.size(); i++, j++)
 			filename_vectors[j].push_back(filename_vector_[i]);
 
-	//for (int i = 0; i < num_core_threads_; i++)
-		//threads.emplace_back(&Cpu::run_core, this, filename_vectors[i]);
-
 	for (int i = 0; i < num_core_threads_; i++)
 		threads[i] = new std::thread(&Cpu::run_core, this, filename_vectors[i]);
 
 	for (int i = 0; i < num_core_threads_; i++)
 		threads[i]->join();
+
+	delete[] threads;
 }
