@@ -21,7 +21,7 @@ class Cpu
 	Cache l3_cache_;
 
 	std::vector<std::string> filename_vector_;
-	std::mutex* l3_mutex_arr_;
+	//std::mutex* l3_mutex_arr_;
 
 	void run_core(const std::vector<std::string>&);
 

@@ -17,7 +17,8 @@ Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity,
 {
 	cpu_id_++;
 
-	l3_mutex_arr_ = new std::mutex[mutex_arr_size_];
+	//l3_mutex_arr_ = nullptr;
+	//l3_mutex_arr_ = new std::mutex[mutex_arr_size_];
 }
 
 void Cpu::run_core(const std::vector<std::string>& filename_vector)
@@ -52,7 +53,8 @@ void Cpu::run_core(const std::vector<std::string>& filename_vector)
 
 Cpu::~Cpu()
 {
-	delete[] l3_mutex_arr_;
+	//if (l3_mutex_arr_ != nullptr)
+	//	delete[] l3_mutex_arr_;
 }
 
 
@@ -100,7 +102,8 @@ void Cpu::ProcessData()
 
 void Cpu::ProcessDataParallel()
 {
-	l3_cache_.give_mutexes(l3_mutex_arr_, num_core_threads_);
+	const auto l3_mutex_arr = new std::mutex[mutex_arr_size_];
+	l3_cache_.give_mutexes(l3_mutex_arr, mutex_arr_size_);
 
 	auto* threads = new std::thread*[num_core_threads_];
 	std::vector<std::vector<std::string>> filename_vectors;
@@ -119,4 +122,5 @@ void Cpu::ProcessDataParallel()
 		threads[i]->join();
 
 	delete[] threads;
+	delete[] l3_mutex_arr;
 }
