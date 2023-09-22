@@ -21,6 +21,125 @@ Cpu::Cpu(const unsigned long l1_cache_size, const unsigned long associativity,
 	//l3_mutex_arr_ = new std::mutex[mutex_arr_size_];
 }
 
+void Cpu::read_file(std::string filename, Core* core)
+{
+	std::ifstream infile(filename, std::ios::binary);
+
+	if (infile.is_open())
+	{
+		if (cpu_id_ % 2)
+		{
+			// May need to check last line
+			int core_index = 0;
+			unsigned long lc = 0;
+			unsigned long item = 0;
+			char buf[2048];
+			do
+			{
+				infile.read(buf, sizeof(buf));
+				int k = infile.gcount();
+				for (int i = 0; i < k; ++i)
+				{
+					switch (buf[i])
+					{
+					case '\r':
+						break;
+					case '\n':
+						core->pass_data(item);
+						item = 0;
+						lc++;
+						break;
+					case ' ':
+						item = 0;
+						break;
+					case '0': case '1': case '2': case '3':
+					case '4': case '5': case '6': case '7':
+					case '8': case '9':
+						item = 10 * item + buf[i] - '0';
+						break;
+					default:
+						std::cerr << "Bad format\n";
+					}
+				}
+			} while (!infile.eof());
+		}
+		else
+		{
+			unsigned long entry;
+
+			while (!infile.eof())
+			{
+				infile >> entry;
+				core->pass_data(entry);
+			}
+		}
+
+		infile.close();
+	}
+}
+
+void Cpu::read_file(std::string filename, Core** cores)
+{
+	std::ifstream infile(filename, std::ios::binary);
+
+	if (infile.is_open())
+	{
+		if (cpu_id_ % 2)
+		{
+			// May need to check last line
+			int core_index = 0;
+			unsigned long lc = 0;
+			unsigned long item = 0;
+			char buf[2048];
+			do
+			{
+				infile.read(buf, sizeof(buf));
+				int k = infile.gcount();
+				for (int i = 0; i < k; ++i)
+				{
+					switch (buf[i])
+					{
+					case '\r':
+						break;
+					case '\n':
+						cores[core_index]->pass_data(item);
+						core_index++;
+						if (core_index == num_core_threads_) core_index = 0;
+						item = 0;
+						lc++;
+						break;
+					case ' ':
+						item = 0;
+						break;
+					case '0': case '1': case '2': case '3':
+					case '4': case '5': case '6': case '7':
+					case '8': case '9':
+						item = 10 * item + buf[i] - '0';
+						break;
+					default:
+						std::cerr << "Bad format\n";
+					}
+				}
+			} while (!infile.eof());
+		}
+		else
+		{
+			unsigned long entry;
+
+			while (!infile.eof())
+			{
+				for (int i = 0; i < num_core_threads_; i++)
+				{
+					infile >> entry;
+					cores[i]->pass_data(entry);
+				}
+			}
+		}
+
+		infile.close();
+	}
+}
+
 void Cpu::run_core(const std::vector<std::string>& filename_vector)
 {
 	static int core_num = -1;
@@ -32,20 +151,7 @@ void Cpu::run_core(const std::vector<std::string>& filename_vector)
 	
 	for (auto& filename : filename_vector)
 	{
-		std::ifstream infile(filename, std::ios::binary);
-		
-		if (infile.is_open())
-		{
-			unsigned long entry;
-
-			while (!infile.eof())
-			{
-				infile >> entry;
-				core.pass_data(entry);
-			}
-
-			infile.close();
-		}
+		read_file(filename, &core);
 	}
 
 	outfile.close();
@@ -71,23 +177,7 @@ void Cpu::ProcessData()
 
 	for(auto& filename : filename_vector_)
 	{
-		std::ifstream infile(filename, std::ios::binary);
-
-		if (infile.is_open())
-		{
-			unsigned long entry;
-
-			while (!infile.eof())
-			{
-				for (int i = 0; i < num_core_threads_; i++)
-				{
-					infile >> entry;
-					cores[i]->pass_data(entry);
-				}
-			}
-
-			infile.close();
-		}
+		read_file(filename, cores);
 	}
 
 	for (int i = 0; i < num_core_threads_; i++)

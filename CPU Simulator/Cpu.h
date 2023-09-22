@@ -23,6 +23,8 @@ class Cpu
 	std::vector<std::string> filename_vector_;
 	//std::mutex* l3_mutex_arr_;
 
+	void read_file(std::string, Core*);
+	void read_file(std::string, Core**);
 	void run_core(const std::vector<std::string>&);
 
 public:
