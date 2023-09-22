@@ -69,7 +69,7 @@ std::string Cache::get_miss_type(const unsigned long data)
 
 		if (!full_)
 			for (unsigned long i = 0; !full_ && i < sets_; i++)
-				if (cache_[i].size() < ways_)
+				if (cache_[i].size() == ways_)
 					full_ = true;
 
 		if (full_)
@@ -91,7 +91,7 @@ std::string Cache::get_miss_type(const unsigned long data)
 
 				l3_mutex_arr_[set_mutex].lock();
 
-				if (cache_[i].size() < ways_)
+				if (cache_[i].size() == ways_)
 					full_ = true;
 
 				l3_mutex_arr_[set_mutex].unlock();
