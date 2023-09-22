@@ -14,34 +14,22 @@ unsigned long long get_runtime(Cpu&, void (Cpu::*)());
 
 int main()
 {
-	constexpr unsigned long long data_entries = 4194304;
+	constexpr unsigned long long data_entries = 8388608;
 	constexpr unsigned long memory_addresses = 262144;
-	constexpr unsigned long l1_cache_size = 128;
+	constexpr unsigned long l1_cache_size = 256;
 	constexpr unsigned long associativity = 8;
-	//int cpu_cores = 1;
+	constexpr int cpu_cores = 4;
 
-	std::vector<std::string> data_filenames(generate_lists(data_entries, memory_addresses - 1));
-
-	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames, 2);
-		//const auto process_data_ptr = &Cpu::ProcessData;
-		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
-	}
+	const std::vector<std::string> data_filenames(generate_lists(data_entries, memory_addresses - 1));
 
 	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames, 2);
+		Cpu cpu(l1_cache_size, associativity, data_filenames, cpu_cores);
 		const auto process_data_ptr = &Cpu::ProcessData;
 		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
 
 	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames, 2);
-		//const auto process_data_ptr = &Cpu::ProcessDataParallel;
-		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
-	}
-
-	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames, 2);
+		Cpu cpu(l1_cache_size, associativity, data_filenames, cpu_cores);
 		const auto process_data_ptr = &Cpu::ProcessDataParallel;
 		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
@@ -62,12 +50,12 @@ std::vector<std::string> generate_lists(const unsigned long long data_entries, c
 		if (i < data_entries / data_entries_per_file)
 		{
 			data_filenames.push_back(filename);
-			//generate_number_list(filename, data_entries_per_file, 0, max);
+			generate_number_list(filename, data_entries_per_file, 0, max);
 		}
 		else if (data_entries % data_entries_per_file != 0)
 		{
 			data_filenames.push_back(filename);
-			//generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
+			generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
 		}
 	}
 
@@ -78,7 +66,6 @@ void generate_number_list(const std::string& filename, const unsigned long long 
 {
 	std::ofstream outfile(filename, std::ios::binary);
 
-	// 11 characters per line
 	for (unsigned long long i = 0; i < length; ++i)
 		outfile << get_random_number(min, max) << '\n';
 
@@ -99,11 +86,7 @@ unsigned long get_random_number(const unsigned long min, const unsigned long max
 unsigned long long get_runtime(Cpu& cpu, void (Cpu::*func_ptr)())
 {
 	const auto start_time = std::chrono::high_resolution_clock::now();
-	//cpu.ProcessData();
-	//cpu.ProcessDataParallel();
 	(cpu.*func_ptr)();
 	const auto stop_time = std::chrono::high_resolution_clock::now();
-	const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time);
-
-	return duration.count();
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(stop_time - start_time).count();
 }

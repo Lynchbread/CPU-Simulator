@@ -21,16 +21,14 @@ class Cpu
 	Cache l3_cache_;
 
 	std::vector<std::string> filename_vector_;
-	std::mutex* l3_mutex_arr_;
 
-	void read_file(std::string, Core*);
-	void read_file(std::string, Core**);
-	void run_core(const std::vector<std::string>&);
+	static void read_file(const std::string&, Core*);
+	void read_file(const std::string&, Core**) const;
+	void run_core(const std::vector<std::string>&, int core_num);
 
 public:
 	Cpu();
 	Cpu(unsigned long, unsigned long, std::vector<std::string>, int = 1);
-	~Cpu();
 
 	void ProcessData();
 	void ProcessDataParallel();

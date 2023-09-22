@@ -1,5 +1,6 @@
 #include "Core.h"
 
+#include <cstring>
 #include <iomanip>
 #include <list>
 
