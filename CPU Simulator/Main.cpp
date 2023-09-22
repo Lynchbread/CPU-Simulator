@@ -14,11 +14,11 @@ unsigned long long get_runtime(Cpu&, void (Cpu::*)());
 
 int main()
 {
-	constexpr unsigned long long data_entries = 67108864;
-	constexpr unsigned long memory_addresses = 2097152;
-	constexpr unsigned long l1_cache_size = 256;
+	constexpr unsigned long long data_entries = 4194304;
+	constexpr unsigned long memory_addresses = 262144;
+	constexpr unsigned long l1_cache_size = 128;
 	constexpr unsigned long associativity = 8;
-	int cpu_cores = 1;
+	//int cpu_cores = 1;
 
 	std::vector<std::string> data_filenames(generate_lists(data_entries, memory_addresses - 1));
 
