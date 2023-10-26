@@ -1,8 +1,6 @@
 #include "Core.h"
 
-#include <cstring>
 #include <iomanip>
-#include <list>
 
 Core::Core()
 {
@@ -35,37 +33,49 @@ void Core::pass_data(const unsigned long data)
 	constexpr int spacing = 18;
 	const std::string l1_result = l1_cache_.hit(data);
 
-	*outfile_ptr_ << "L1:  " << std::left << std::setw(spacing) << l1_result;
+	//*outfile_ptr_ << "L1:  " << std::left << std::setw(spacing) << l1_result;
 
 	if (l1_result == "HIT")
 	{
 		l2_cache_.insert_data(data, l2_cache_.find(data));
-		l3_cache_ptr_->insert_data(data, l3_cache_ptr_->find(data));
+
+		if (l3_cache_ptr_)
+			l3_cache_ptr_->insert_data(data, l3_cache_ptr_->find(data));
+		
 	}
 	else if (l1_result == "Compulsory MISS")
 	{
 		l2_cache_.insert_data(data, l2_cache_.get_ways());
-		const std::string l3_result = l3_cache_ptr_->hit(data);
 
-		*outfile_ptr_ << " | L2:  " << std::setw(spacing) << l1_result << " | L3:  " << l3_result;
+		if (l3_cache_ptr_)
+		{
+			const std::string l3_result = l3_cache_ptr_->hit(data);
+			//*outfile_ptr_ << " | L2:  " << std::setw(spacing) << l1_result << " | L3:  " << l3_result;
+		}
+		else
+		{
+			//*outfile_ptr_ << " | L2:  " << std::setw(spacing) << l1_result;
+		}
 	}
 	else
 	{
 		const std::string l2_result = l2_cache_.hit(data);
 
-		*outfile_ptr_ << " | L2:  " << std::setw(spacing) << l2_result;
+		//*outfile_ptr_ << " | L2:  " << std::setw(spacing) << l2_result;
 
-		if (l2_result == "HIT")
+		if (l3_cache_ptr_)
 		{
-			l3_cache_ptr_->insert_data(data, l3_cache_ptr_->find(data));
-		}
-		else
-		{
-			const std::string l3_result = l3_cache_ptr_->hit(data);
-
-			*outfile_ptr_ << " | L3:  " << l3_result;
+			if (l2_result == "HIT")
+			{
+				l3_cache_ptr_->insert_data(data, l3_cache_ptr_->find(data));
+			}
+			else
+			{
+				const std::string l3_result = l3_cache_ptr_->hit(data);
+				//*outfile_ptr_ << " | L3:  " << l3_result;
+			}
 		}
 	}
 
-	*outfile_ptr_ << '\n';
+	//*outfile_ptr_ << '\n';
 }

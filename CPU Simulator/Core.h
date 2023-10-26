@@ -1,9 +1,6 @@
 #pragma once
 #include <fstream>
-#include <list>
 #include <mutex>
-#include <queue>
-#include <string>
 
 #include "Cache.h"
 

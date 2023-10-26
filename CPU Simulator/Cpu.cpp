@@ -1,9 +1,7 @@
 #include "Cpu.h"
 
-#include <functional>
+//#include <functional>
 #include <iostream>
-#include <list>
-#include <queue>
 #include <thread>
 
 int Cpu::cpu_id_ = -1;
@@ -31,12 +29,14 @@ void Cpu::read_file(const std::string& filename, Core* core)
 		int core_index = 0;
 		unsigned long lc = 0;
 		unsigned long item = 0;
-		char buf[2048];
+		//char buf[2048];
+		constexpr auto buf_size = 1048576 * 11;
+		const auto buf = new char[buf_size];
 		do
 		{
-			infile.read(buf, sizeof(buf));
-			const int k = infile.gcount();
-			for (int i = 0; i < k; ++i)
+			infile.read(buf, sizeof buf);
+			const unsigned long long k = infile.gcount();
+			for (unsigned long long i = 0; i < k; ++i)
 			{
 				switch (buf[i])
 				{
@@ -59,6 +59,7 @@ void Cpu::read_file(const std::string& filename, Core* core)
 			}
 		} while (!infile.eof());
 
+		delete[] buf;
 		infile.close();
 	}
 }
@@ -73,12 +74,14 @@ void Cpu::read_file(const std::string& filename, Core** cores) const
 		int core_index = 0;
 		unsigned long lc = 0;
 		unsigned long item = 0;
-		char buf[2048];
+		//char buf[2048];
+		constexpr auto buf_size = 1048576 * 11;
+		const auto buf = new char[buf_size];
 		do
 		{
-			infile.read(buf, sizeof(buf));
-			const int k = infile.gcount();
-			for (int i = 0; i < k; ++i)
+			infile.read(buf, sizeof buf);
+			const unsigned long long k = infile.gcount();
+			for (unsigned long long i = 0; i < k; ++i)
 			{
 				switch (buf[i])
 				{
@@ -103,6 +106,7 @@ void Cpu::read_file(const std::string& filename, Core** cores) const
 			}
 		} while (!infile.eof());
 
+		delete[] buf;
 		infile.close();
 	}
 }
@@ -111,7 +115,8 @@ void Cpu::run_core(const std::vector<std::string>& filename_vector, const int co
 {
 	std::ofstream outfile("cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(core_num) + "_output.txt");
 
-	Core core(l1_cache_size_, associativity_, &outfile, &l3_cache_);
+	//Core core(l1_cache_size_, associativity_, &outfile, &l3_cache_);
+	Core core(l1_cache_size_, associativity_, &outfile, nullptr);
 	
 	for (auto& filename : filename_vector)
 		read_file(filename, &core);
@@ -127,7 +132,8 @@ void Cpu::ProcessData()
 	for (int i = 0; i < num_core_threads_; i++)
 	{
 		outfile_arr[i].open("cpu" + std::to_string(cpu_id_) + "_core" + std::to_string(i) + "_output.txt");
-		cores[i] = new Core(l1_cache_size_, associativity_, &outfile_arr[i], &l3_cache_);
+		//cores[i] = new Core(l1_cache_size_, associativity_, &outfile_arr[i], &l3_cache_);
+		cores[i] = new Core(l1_cache_size_, associativity_, &outfile_arr[i], nullptr);
 	}
 
 	for(auto& filename : filename_vector_)
@@ -147,8 +153,8 @@ void Cpu::ProcessData()
 
 void Cpu::ProcessDataParallel()
 {
-	const auto l3_mutex_arr = new std::mutex[mutex_arr_size_];
-	l3_cache_.give_mutexes(l3_mutex_arr, mutex_arr_size_);
+	//const auto l3_mutex_arr = new std::mutex[mutex_arr_size_];
+	//l3_cache_.give_mutexes(l3_mutex_arr, mutex_arr_size_);
 
 	std::vector<std::vector<std::string>> filename_vectors;
 
@@ -170,5 +176,5 @@ void Cpu::ProcessDataParallel()
 		threads[i]->join();
 
 	delete[] threads;
-	delete[] l3_mutex_arr;
+	//delete[] l3_mutex_arr;
 }

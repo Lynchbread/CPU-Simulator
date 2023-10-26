@@ -14,9 +14,9 @@ unsigned long long get_runtime(Cpu&, void (Cpu::*)());
 
 int main()
 {
-	constexpr unsigned long long data_entries = 8388608;
+	constexpr unsigned long long data_entries = 4194304;
 	constexpr unsigned long memory_addresses = 262144;
-	constexpr unsigned long l1_cache_size = 256;
+	constexpr unsigned long l1_cache_size = 128;
 	constexpr unsigned long associativity = 8;
 	constexpr int cpu_cores = 4;
 
