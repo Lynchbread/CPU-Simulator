@@ -22,12 +22,16 @@
     <ClCompile Include="Cache.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="Cpu.cpp" />
+    <ClCompile Include="HuffmanTree.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RL23.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cpu.h" />
+    <ClInclude Include="HuffmanTree.h" />
+    <ClInclude Include="RL23.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
