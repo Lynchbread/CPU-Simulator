@@ -29,7 +29,7 @@ void Cpu::read_file(const std::string& filename, Core* core)
 	{
 		// May need to check last line
 		int core_index = 0;
-		unsigned long lc = 0;
+		unsigned long line_count = 0;
 		unsigned long item = 0;
 		char buf[2048];
 		do
@@ -43,7 +43,7 @@ void Cpu::read_file(const std::string& filename, Core* core)
 				case '\r':
 					break;
 				case '\n':
-					lc++;
+					line_count++;
 				case ' ':
 					core->pass_data(item);
 					item = 0;
@@ -71,7 +71,7 @@ void Cpu::read_file(const std::string& filename, Core** cores) const
 	{
 		// May need to check last line
 		int core_index = 0;
-		unsigned long lc = 0;
+		unsigned long line_count = 0;
 		unsigned long item = 0;
 		char buf[2048];
 		do
@@ -85,7 +85,7 @@ void Cpu::read_file(const std::string& filename, Core** cores) const
 				case '\r':
 					break;
 				case '\n':
-					lc++;
+					line_count++;
 				case ' ':
 					cores[core_index]->pass_data(item);
 					core_index++;
@@ -144,7 +144,7 @@ void Cpu::ProcessData()
 	delete[] outfile_arr;
 	delete[] cores;
 }
-
+/*
 void Cpu::ProcessDataParallel()
 {
 	const auto l3_mutex_arr = new std::mutex[mutex_arr_size_];
@@ -171,4 +171,4 @@ void Cpu::ProcessDataParallel()
 
 	delete[] threads;
 	delete[] l3_mutex_arr;
-}
+}*/

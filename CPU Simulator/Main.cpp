@@ -14,7 +14,7 @@ unsigned long long get_runtime(Cpu&, void (Cpu::*)());
 
 int main()
 {
-	constexpr unsigned long long data_entries = 8388608;
+	constexpr unsigned long long data_entries = 16777216;
 	constexpr unsigned long memory_addresses = 262144;
 	constexpr unsigned long l1_cache_size = 256;
 	constexpr unsigned long associativity = 8;
@@ -29,9 +29,9 @@ int main()
 	}
 
 	{
-		Cpu cpu(l1_cache_size, associativity, data_filenames, cpu_cores);
-		const auto process_data_ptr = &Cpu::ProcessDataParallel;
-		std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
+		//Cpu cpu(l1_cache_size, associativity, data_filenames, cpu_cores);
+		//const auto process_data_ptr = &Cpu::ProcessDataParallel;
+		//std::cout << get_runtime(cpu, process_data_ptr) / 1000000 << " ms\n";
 	}
 
 	return 0;
@@ -39,7 +39,7 @@ int main()
 
 std::vector<std::string> generate_lists(const unsigned long long data_entries, const unsigned long max)
 {
-	constexpr unsigned long long data_entries_per_file = 1048576;
+	constexpr unsigned long long data_entries_per_file = 16777216;
 
 	std::vector<std::string> data_filenames;
 
@@ -50,12 +50,12 @@ std::vector<std::string> generate_lists(const unsigned long long data_entries, c
 		if (i < data_entries / data_entries_per_file)
 		{
 			data_filenames.push_back(filename);
-			generate_number_list(filename, data_entries_per_file, 0, max);
+			//generate_number_list(filename, data_entries_per_file, 0, max);
 		}
 		else if (data_entries % data_entries_per_file != 0)
 		{
 			data_filenames.push_back(filename);
-			generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
+			//generate_number_list(filename, data_entries % data_entries_per_file, 0, max);
 		}
 	}
 

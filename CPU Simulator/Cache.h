@@ -10,14 +10,13 @@ class Cache
 
 	bool full_;
 
-	std::mutex* l3_mutex_arr_;
-	unsigned long l3_mutex_0_size_;
-	
+	//std::mutex* l3_mutex_arr_;
+	//unsigned long l3_mutex_0_size_;
 
 	std::vector<unsigned long>* cache_;
 	std::vector<bool> compulsory_vector_;
 
-	std::string get_miss_type(unsigned long);
+	const std::string* get_miss_type(unsigned long);
 
 public:
 	Cache();
@@ -26,7 +25,7 @@ public:
 
 	unsigned long find(unsigned long) const;
 	unsigned long get_ways() const;
-	std::string hit(unsigned long);
+	const std::string* hit(unsigned long);
 	void insert_data(unsigned long, unsigned long) const;
-	void give_mutexes(std::mutex*, unsigned long);
+	//void give_mutexes(std::mutex*, unsigned long);
 };

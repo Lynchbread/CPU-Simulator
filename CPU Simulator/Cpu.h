@@ -31,5 +31,5 @@ public:
 	Cpu(unsigned long, unsigned long, std::vector<std::string>, int = 1);
 
 	void ProcessData();
-	void ProcessDataParallel();
+	//void ProcessDataParallel();
 };
